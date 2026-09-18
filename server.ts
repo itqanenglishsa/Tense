@@ -117,9 +117,8 @@ function buildServerFallbackEvaluation(tenseId: string, tenseNameEn: string, ten
   };
 }
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
+const PORT = 3000;
 
   // Enable CORS for all incoming requests (essential for iframe preview embedding)
   app.use((req, res, next) => {
@@ -277,28 +276,37 @@ Provide a clear, pedagogical, concise, and structured answer in Arabic (with Eng
       return res.json({ reply: fallbackReply, answer: fallbackReply, source: 'fallback' });
     }
   });
+  
+  // In Vercel, this Express app is exported from api/index.ts.
+  // Vercel does not need app.listen(); it invokes the exported handler itself.
+}
 
-  // Vite development middleware or static serve in production
-  app.use('/videos', express.static(path.join(process.cwd(), 'videos')));
+// Export the same Express app so Vercel can use it as a serverless function.
+export default app;
 
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true, cors: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req: Request, res: Response) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+// Local development / local production server only.
+// Vercel sets VERCEL=1, so it will NOT start a local listener there.
+if (!process.env.VERCEL) {
+  async function startLocalServer() {
+    if (process.env.NODE_ENV !== 'production') {
+      const vite = await createViteServer({
+        server: { middlewareMode: true, cors: true },
+        appType: 'spa',
+      });
+
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req: Request, res: Response) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+
+    app.listen(PORT, 'localhost', () => {
+      console.log('English Tenses Master Course server running on http://localhost:3000');
     });
   }
 
-  // تم التعديل هنا ليعمل على localhost بدلاً من 0.0.0.0
-  app.listen(PORT, 'localhost', () => {
-    console.log(`English Tenses Master Course server running on http://localhost:${PORT}`);
-  });
+  startLocalServer();
 }
-
-startServer();
