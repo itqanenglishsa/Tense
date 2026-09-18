@@ -279,7 +279,7 @@ Provide a clear, pedagogical, concise, and structured answer in Arabic (with Eng
   
   // In Vercel, this Express app is exported from api/index.ts.
   // Vercel does not need app.listen(); it invokes the exported handler itself.
-}
+
 
 // Export the same Express app so Vercel can use it as a serverless function.
 export default app;
