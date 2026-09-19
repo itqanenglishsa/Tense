@@ -34,6 +34,7 @@ export const VideoGallery: React.FC<VideoGalleryProps> = ({
   
   // Playback state
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [showControls, setShowControls] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -97,9 +98,11 @@ const loadVideo = useCallback(() => {
     if (isPlaying) {
       videoPlayerRef.current.pause();
       setIsPlaying(false);
+      setShowControls(true);
     } else {
       videoPlayerRef.current.play();
       setIsPlaying(true);
+      setShowControls(false);
     }
   };
 
@@ -109,6 +112,7 @@ const loadVideo = useCallback(() => {
     if (!isPlaying) {
       videoPlayerRef.current.play();
       setIsPlaying(true);
+      setShowControls(false);
     }
   };
 
@@ -214,17 +218,25 @@ const loadVideo = useCallback(() => {
         ) : (
           <div className="space-y-4">
             {/* Custom Video Container */}
-            <div className="group relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center">
+            <div 
+              className="group relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center cursor-pointer select-none"
+              onClick={() => setShowControls(prev => !prev)}
+            >
               <video
                 ref={videoPlayerRef}
                 src={videoSrc}
                 playsInline
                 controls={false}
                 preload="metadata"
-                className="w-full h-full object-contain cursor-pointer"
-                onClick={togglePlay}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
+                className="w-full h-full object-contain"
+                onPlay={() => {
+                  setIsPlaying(true);
+                  setShowControls(false);
+                }}
+                onPause={() => {
+                  setIsPlaying(false);
+                  setShowControls(true);
+                }}
                 onTimeUpdate={() => {
                   if (videoPlayerRef.current) {
                     setCurrentTime(videoPlayerRef.current.currentTime);
@@ -243,8 +255,11 @@ const loadVideo = useCallback(() => {
               {/* Big Play Button Overlay when paused */}
               {!isPlaying && (
                 <button
-                  onClick={togglePlay}
-                  className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-blue-600/90 hover:bg-blue-500 text-white shadow-2xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer backdrop-blur-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePlay();
+                  }}
+                  className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-blue-600/90 hover:bg-blue-500 text-white shadow-2xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer backdrop-blur-xs z-20"
                   title="تشغيل"
                 >
                   <Play className="w-8 h-8 fill-current ml-1" />
@@ -253,14 +268,23 @@ const loadVideo = useCallback(() => {
 
               {/* Video Overlay Info Chip */}
               {currentChapter && (
-                <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs text-white font-arabic flex items-center gap-2 pointer-events-none">
+                <div className={`absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs text-white font-arabic flex items-center gap-2 pointer-events-none transition-opacity duration-300 ${
+                  showControls ? 'opacity-100' : 'opacity-0'
+                }`}>
                   <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
                   <span className="font-bold">{currentChapter.label}</span>
                 </div>
               )}
 
               {/* Bottom Custom Control Bar */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-3 sm:p-4 space-y-2 opacity-95 transition-opacity">
+              <div 
+                className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-3 sm:p-4 space-y-2 transition-all duration-300 z-10 ${
+                  showControls 
+                    ? 'opacity-95 translate-y-0 pointer-events-auto' 
+                    : 'opacity-0 translate-y-4 pointer-events-none'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
                 {/* Progress Bar */}
                 <div className="flex items-center gap-2">
                   <input
